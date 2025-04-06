@@ -1,0 +1,8 @@
+const records = await PatientRecords.getAllRecordsconsole.log(records);
+const PatientRecords = await ethers.getContractAt("PatientRecords", contractAddress);
+const contractAddress = "0xa8030c014a98513eE21AD147a92B3Fd25991b924"
+console.log(records);
+const records = await PatientRecords.getAllRecords();
+// Example: Fetch all records (if there's a function for it)
+c
+const contractAddress = "YOUR_CONTRACT_ADDRESS";

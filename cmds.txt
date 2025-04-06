@@ -1,0 +1,5 @@
+npx hardhat compile
+npx hardhat run scripts/deploy.js --network sepolia
+
+#might require some other commands to setup the project before running the above commands
+#npx hardhat init (to create a new project)
