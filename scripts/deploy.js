@@ -1,14 +1,16 @@
 const hre = require("hardhat");
 
 async function main() {
-  const PatientRecords = await hre.ethers.getContractFactory("PatientRecords"); // Contract name
+  const PatientRecords = await hre.ethers.getContractFactory("PatientRecords");
 
-  console.log("Deploying PatientRecords...");
-  const patientRecords = await PatientRecords.deploy(); // Deploys contract
+  console.log("Deploying PatientRecords to Sepolia...");
+  const patientRecords = await PatientRecords.deploy();
 
-  await patientRecords.waitForDeployment(); // Wait for contract to be deployed properly
-
-  console.log(`PatientRecords deployed to: ${await patientRecords.getAddress()}`);
+  await patientRecords.waitForDeployment();
+  
+  const address = await patientRecords.getAddress();
+  console.log(`PatientRecords deployed to: ${address}`);
+  console.log(`View on Etherscan: https://sepolia.etherscan.io/address/${address}`);
 }
 
 main().catch((error) => {

@@ -1,5 +1,30 @@
-npx hardhat compile
-npx hardhat run scripts/deploy.js --network sepolia
+# Project Setup
+npm init -y                        # Initialize package.json if not already done
+npm install hardhat                # Install Hardhat
+npx hardhat init                   # Initialize Hardhat project
+npm install dotenv axios           # Install required dependencies
 
-#might require some other commands to setup the project before running the above commands
-#npx hardhat init (to create a new project)
+# Environment setup
+# Create a .env file with the following variables:
+# INFURA_URL = "https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+# PRIVATE_KEY = "YOUR_ETHEREUM_PRIVATE_KEY"
+# PINATA_API_KEY = "YOUR_PINATA_API_KEY"
+# PINATA_API_SECRET = "YOUR_PINATA_API_SECRET"
+
+# Compile smart contracts
+npx hardhat compile
+
+# Deploy to Sepolia
+npx hardhat run scripts/deploy.js --network sepolia
+# Save the contract address that is output from this command
+
+# Test IPFS upload
+node scripts/test-ipfs.js
+
+# Test contract interactions with IPFS
+# First update the contractAddress in test-contract.js with your deployed address
+npx hardhat run scripts/test-contract.js --network sepolia
+
+# For local development and testing
+npx hardhat node                   # Start a local Ethereum node
+npx hardhat run scripts/deploy.js --network localhost  # Deploy to local node
