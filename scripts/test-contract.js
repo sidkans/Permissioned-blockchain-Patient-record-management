@@ -63,7 +63,7 @@ async function main() {
   
   try {
     // Get contract address from deployment
-    const contractAddress = "0x31ccdbaD6462182be40d35E3463defe32ec07A0F"; // Replace with your actual contract address
+    const contractAddress = "0xf1e5273903416e4Cd69D0c62fAf118525440087F"; // Replace with your actual contract address
     
     // Connect to the deployed contract
     console.log("Connecting to contract at", contractAddress);

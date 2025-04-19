@@ -22,13 +22,60 @@ export const BlockchainContext = createContext()
 
 export const BlockchainProvider = ({ children }) => {
   const [currentAccount, setCurrentAccount] = useState("")
+  // eslint-disable-next-line no-unused-vars
   const [provider, setProvider] = useState(null)
+  // eslint-disable-next-line no-unused-vars
   const [signer, setSigner] = useState(null)
   const [contract, setContract] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [userRole, setUserRole] = useState(null) // 'patient', 'doctor', 'hospital', 'admin'
   const [records, setRecords] = useState([])
+
+  // For demo purposes, determine user role based on address
+  // In a real app, this would come from your contract or a database
+  const determineUserRole = useCallback((address) => {
+    // This is just a placeholder. In a real app, you would check the role from your contract
+    // or from a database. For now, we'll just assign roles based on the address.
+    const addressLower = address.toLowerCase()
+    const lastChar = addressLower.charAt(addressLower.length - 1)
+
+    let role
+    if (["0", "1", "2", "3"].includes(lastChar)) {
+      role = "patient"
+    } else if (["4", "5", "6"].includes(lastChar)) {
+      role = "doctor"
+    } else if (["7", "8"].includes(lastChar)) {
+      role = "hospital"
+    } else {
+      role = "admin"
+    }
+
+    setUserRole(role)
+    // Save to localStorage for persistence
+    localStorage.setItem("userRole", role)
+  }, [])
+
+  // Setup event listener
+  const setupEventListener = useCallback(async () => {
+    try {
+      const { ethereum } = window
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+        const signer = provider.getSigner()
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+
+        setProvider(provider)
+        setSigner(signer)
+        setContract(contract)
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }, [])
 
   // Check if wallet is connected
   const checkIfWalletIsConnected = useCallback(async () => {
@@ -57,7 +104,7 @@ export const BlockchainProvider = ({ children }) => {
       console.error(error)
       setError("Error connecting to wallet")
     }
-  }, [])
+  }, [determineUserRole, setupEventListener])
 
   // Connect wallet
   const connectWallet = async () => {
@@ -82,46 +129,6 @@ export const BlockchainProvider = ({ children }) => {
       console.error(error)
       setError("Error connecting to wallet")
       setLoading(false)
-    }
-  }
-
-  // Setup event listener
-  const setupEventListener = useCallback(async () => {
-    try {
-      const { ethereum } = window
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum)
-        const signer = provider.getSigner()
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-
-        setProvider(provider)
-        setSigner(signer)
-        setContract(contract)
-      } else {
-        console.log("Ethereum object doesn't exist!")
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [])
-
-  // For demo purposes, determine user role based on address
-  // In a real app, this would come from your contract or a database
-  const determineUserRole = (address) => {
-    // This is just a placeholder. In a real app, you would check the role from your contract
-    // or from a database. For now, we'll just assign roles based on the address.
-    const addressLower = address.toLowerCase()
-    const lastChar = addressLower.charAt(addressLower.length - 1)
-
-    if (["0", "1", "2", "3"].includes(lastChar)) {
-      setUserRole("patient")
-    } else if (["4", "5", "6"].includes(lastChar)) {
-      setUserRole("doctor")
-    } else if (["7", "8"].includes(lastChar)) {
-      setUserRole("hospital")
-    } else {
-      setUserRole("admin")
     }
   }
 
@@ -243,7 +250,7 @@ export const BlockchainProvider = ({ children }) => {
         window.ethereum.removeAllListeners("accountsChanged")
       }
     }
-  }, [checkIfWalletIsConnected])
+  }, [checkIfWalletIsConnected, determineUserRole])
 
   return (
     <BlockchainContext.Provider

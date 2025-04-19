@@ -1,21 +1,34 @@
-import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { BlockchainContext } from '../context/BlockchainContext';
+"use client"
+
+import { useContext, useEffect, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { BlockchainContext } from "../context/BlockchainContext"
+import "../styles/Navbar.css"
 
 const Navbar = () => {
-  const { currentAccount, connectWallet, userRole } = useContext(BlockchainContext);
-  const navigate = useNavigate();
+  const { currentAccount, connectWallet, userRole } = useContext(BlockchainContext)
+  const [localUserRole, setLocalUserRole] = useState(localStorage.getItem("userRole"))
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Update local state when context changes
+    if (userRole) {
+      setLocalUserRole(userRole)
+    }
+  }, [userRole])
 
   const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    navigate('/');
-    window.location.reload();
-  };
+    localStorage.removeItem("userRole")
+    setLocalUserRole(null)
+    navigate("/")
+    window.location.reload()
+  }
 
   const getDashboardLink = () => {
-    if (!userRole) return '/login';
-    return `/${userRole}-dashboard`;
-  };
+    const role = localUserRole || userRole
+    if (!role) return "/login"
+    return `/${role}-dashboard`
+  }
 
   return (
     <nav className="navbar">
@@ -55,7 +68,8 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
-  );
-};
+  )
+}
 
-export default Navbar;
+export default Navbar
+

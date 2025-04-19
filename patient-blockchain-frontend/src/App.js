@@ -18,7 +18,7 @@ import "./styles/global.css"
 
 // Protected Route Component
 const ProtectedRoute = ({ children, role }) => {
-  // Get user role from context
+  // Get user role from localStorage
   const userRole = localStorage.getItem("userRole")
 
   if (!userRole) {
@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children, role }) => {
   return children
 }
 
-function App() {
+const App = () => {
   return (
     <BlockchainProvider>
       <Router>

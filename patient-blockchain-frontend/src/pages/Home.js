@@ -1,15 +1,32 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { BlockchainContext } from '../context/BlockchainContext';
-import '../styles/Home.css';
+"use client"
+
+import { useContext, useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { BlockchainContext } from "../context/BlockchainContext"
+import "../styles/Home.css"
 
 const Home = () => {
-  const { currentAccount, connectWallet, userRole } = useContext(BlockchainContext);
+  const { currentAccount, connectWallet, userRole } = useContext(BlockchainContext)
+  const [localUserRole, setLocalUserRole] = useState(localStorage.getItem("userRole"))
+  const navigate = useNavigate()
 
-  const getDashboardLink = () => {
-    if (!userRole) return '/login';
-    return `/${userRole}-dashboard`;
-  };
+  useEffect(() => {
+    // Update local state when context changes
+    if (userRole) {
+      setLocalUserRole(userRole)
+    }
+  }, [userRole])
+
+  const handleDashboardClick = (e) => {
+    e.preventDefault()
+    const role = localUserRole || userRole
+
+    if (!role) {
+      navigate("/login")
+    } else {
+      navigate(`/${role}-dashboard`)
+    }
+  }
 
   return (
     <div className="home-page">
@@ -17,13 +34,13 @@ const Home = () => {
         <div className="hero-content">
           <h1>Secure Patient Record Management on Blockchain</h1>
           <p>
-            A decentralized, tamper-proof system where patients have full control over their medical records.
-            Built on Ethereum for maximum security and transparency.
+            A decentralized, tamper-proof system where patients have full control over their medical records. Built on
+            Ethereum for maximum security and transparency.
           </p>
           {currentAccount ? (
-            <Link to={getDashboardLink()} className="btn btn-large">
+            <button onClick={handleDashboardClick} className="btn btn-large">
               Go to Dashboard
-            </Link>
+            </button>
           ) : (
             <button onClick={connectWallet} className="btn btn-large">
               Connect Wallet to Begin
@@ -83,22 +100,9 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      <section className="cta">
-        <h2>Ready to take control of your medical records?</h2>
-        <p>Join our blockchain-based patient record management system today.</p>
-        {currentAccount ? (
-          <Link to={getDashboardLink()} className="btn btn-large">
-            Go to Dashboard
-          </Link>
-        ) : (
-          <button onClick={connectWallet} className="btn btn-large">
-            Connect Wallet
-          </button>
-        )}
-      </section>
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
+

@@ -1,34 +1,53 @@
-import React, { useState, useContext } from 'react';
-import { BlockchainContext } from '../context/BlockchainContext';
-import RecordCard from '../components/RecordCard';
-import Loading from '../components/Loading';
-import '../styles/Dashboard.css';
+"use client"
+
+import { useState } from "react"
+import Loading from "../components/Loading"
+import "../styles/Dashboard.css"
 
 const DoctorDashboard = () => {
-  const { currentAccount, viewRecords, loading, records } = useContext(BlockchainContext);
-  const [patientAddress, setPatientAddress] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
+  const [patientAddress, setPatientAddress] = useState("")
+  const [patientRecords, setPatientRecords] = useState([])
+  const [hasAccess, setHasAccess] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!patientAddress) return;
-    
-    await viewRecords(patientAddress);
-    setHasSearched(true);
-  };
+  const handleCheckAccess = async () => {
+    if (!patientAddress) return
 
-  if (loading) return <Loading />;
+    setLoading(true)
+    try {
+      // This would be implemented with your actual contract
+      // const hasAccess = await contract.checkAccess(patientAddress)
+      const hasAccess = true // Placeholder
+      setHasAccess(hasAccess)
+
+      if (hasAccess) {
+        // This would fetch records from your contract
+        // const records = await contract.getPatientRecords(patientAddress)
+        const records = [] // Placeholder
+        setPatientRecords(records)
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Error checking access")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <Loading />
 
   return (
     <div className="dashboard doctor-dashboard">
       <h1>Doctor Dashboard</h1>
-      <p className="account-info">Connected Account: {currentAccount}</p>
 
-      <div className="patient-search-section">
-        <h2>Access Patient Records</h2>
-        <form onSubmit={handleSearch} className="patient-search-form">
-          <div className="form-group">
-            <label htmlFor="patientAddress">Patient's Ethereum Address</label>
+      <div className="patient-lookup">
+        <h2>Patient Record Access</h2>
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <div className="form-group">
+          <label htmlFor="patientAddress">Patient Ethereum Address</label>
+          <div className="address-input-group">
             <input
               type="text"
               id="patientAddress"
@@ -36,40 +55,40 @@ const DoctorDashboard = () => {
               value={patientAddress}
               onChange={(e) => setPatientAddress(e.target.value)}
               placeholder="0x..."
-              required
             />
+            <button onClick={handleCheckAccess} className="btn">
+              Check Access
+            </button>
           </div>
-          <button type="submit" className="btn">Search Records</button>
-        </form>
-      </div>
-
-      {hasSearched && (
-        <div className="records-section">
-          <h2>Patient Records</h2>
-          {records.length === 0 ? (
-            <div className="alert alert-danger">
-              No records found for this patient or you don't have access.
-            </div>
-          ) : (
-            <div className="records-grid">
-              {records.map((record, index) => (
-                <RecordCard key={index} record={record} index={index} />
-              ))}
-            </div>
-          )}
         </div>
-      )}
 
-      <div className="recent-patients-section">
-        <h2>Recent Patients</h2>
-        <p>Your recently accessed patients will appear here.</p>
-        {/* This would be populated from a local storage or database in a real app */}
-        <div className="no-patients-message">
-          No recent patients.
-        </div>
+        {patientAddress && (
+          <div className="access-status">
+            <p>
+              Access Status:
+              {hasAccess ? (
+                <span className="access-granted">Granted</span>
+              ) : (
+                <span className="access-denied">Denied</span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {hasAccess && (
+          <div className="patient-records">
+            <h3>Patient Records</h3>
+            {patientRecords.length === 0 ? (
+              <p>No records found for this patient.</p>
+            ) : (
+              <div className="records-grid">{/* Map through patient records here */}</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DoctorDashboard;
+export default DoctorDashboard
+
