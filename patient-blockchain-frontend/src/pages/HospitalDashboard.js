@@ -1,122 +1,106 @@
-import React, { useState } from 'react';
-import '../styles/Dashboard.css';
+import React, { useState, useContext } from 'react';
+import { BlockchainContext } from '../context/BlockchainContext'; // Adjust path if needed
+import Loading from '../components/Loading'; // Adjust path if needed
+import '../styles/Dashboard.css'; // Adjust path if needed
 
-const HospitalDashboard = () => {
-  const [newUser, setNewUser] = useState({
-    address: '',
-    name: '',
-    role: 'patient'
-  });
+function HospitalDashboard() {
+    const {
+        currentAccount,
+        userRole,
+        loading, // Use general loading state for now
+        error,
+        registerPatientByHospital // Assuming this function exists in context now
+    } = useContext(BlockchainContext);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewUser({
-      ...newUser,
-      [name]: value
-    });
-  };
+    const [patientAddress, setPatientAddress] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false); // Specific loading for form
+    const [formError, setFormError] = useState('');
+    const [formSuccess, setFormSuccess] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // In a real app, this would call a function to register the user on the blockchain
-    console.log('Registering new user:', newUser);
-    alert(`User registration simulated for ${newUser.name} as ${newUser.role}`);
-    setNewUser({
-      address: '',
-      name: '',
-      role: 'patient'
-    });
-  };
+    const handleRegisterPatient = async (e) => {
+        e.preventDefault();
+        if (!patientAddress || !registerPatientByHospital) return;
 
-  return (
-    <div className="dashboard hospital-dashboard">
-      <h1>Hospital Dashboard</h1>
+        setIsSubmitting(true);
+        setFormError('');
+        setFormSuccess('');
 
-      <div className="dashboard-section">
-        <h2>Register New User</h2>
-        <form onSubmit={handleSubmit} className="register-form">
-          <div className="form-group">
-            <label htmlFor="address">Ethereum Address</label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              className="form-control"
-              value={newUser.address}
-              onChange={handleInputChange}
-              placeholder="0x..."
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              className="form-control"
-              value={newUser.name}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              name="role"
-              className="form-control"
-              value={newUser.role}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="patient">Patient</option>
-              <option value="doctor">Doctor</option>
-            </select>
-          </div>
-          <button type="submit" className="btn">Register User</button>
-        </form>
-      </div>
+        try {
+            const success = await registerPatientByHospital(patientAddress);
+            if (success) {
+                setFormSuccess(`Patient ${patientAddress} registered successfully!`);
+                setPatientAddress(''); // Clear field on success
+            } else {
+                 // Error likely set in context function, but set a generic one here too
+                setFormError(error || "Failed to register patient. Check contract interaction.");
+            }
+        } catch (err) {
+            // Catch errors not caught by the context function
+            console.error("Error in handleRegisterPatient:", err);
+            setFormError(`Registration failed: ${err.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-      <div className="dashboard-section">
-        <h2>Verify Record Integrity</h2>
-        <div className="verify-record-form">
-          <div className="form-group">
-            <label htmlFor="recordHash">Record IPFS Hash</label>
-            <input
-              type="text"
-              id="recordHash"
-              className="form-control"
-              placeholder="QmXyz..."
-            />
-          </div>
-          <button className="btn">Verify Record</button>
+     // Conditional Rendering based on Role and Connection
+    if (!currentAccount) {
+        return <div className="dashboard-container"><p>Please connect your wallet.</p></div>;
+    }
+
+    if (loading && userRole === null) { // Show loading while role is being verified initially
+       return <div className="dashboard-container"><Loading /></div>;
+    }
+
+    if (userRole === null && !loading) {
+        // Still determining role or role not found
+       return <div className="dashboard-container"><p>Verifying user role...</p></div>;
+    }
+
+    if (userRole !== 'hospital') {
+        return <div className="dashboard-container"><p>Access Denied. You do not have the required 'Hospital' role.</p></div>;
+    }
+
+     // --- Render Hospital Dashboard UI ---
+    return (
+        <div className="dashboard-container hospital-dashboard">
+            <h2>Hospital Dashboard</h2>
+            <p>Welcome, {currentAccount}</p>
+            {error && !formError && <p className="error-message">Context Error: {error}</p>} {/* Show context error if no form error */}
+
+            {/* Section to Register New Patient */}
+            <div className="dashboard-section">
+                <h3>Register New Patient</h3>
+                 {/* Check if the function is available in context */}
+                {!registerPatientByHospital && <p className="error-message">Patient registration function not available in context.</p>}
+                {registerPatientByHospital && (
+                    <form onSubmit={handleRegisterPatient} className="registration-form">
+                        <input
+                            type="text"
+                            value={patientAddress}
+                            onChange={(e) => setPatientAddress(e.target.value)}
+                            placeholder="Enter Patient Wallet Address"
+                            required
+                            className="address-input"
+                        />
+                        <button type="submit" disabled={isSubmitting || !patientAddress}>
+                            {isSubmitting ? 'Registering...' : 'Register Patient'}
+                        </button>
+                        {formError && <p className="error-message">{formError}</p>}
+                        {formSuccess && <p className="success-message">{formSuccess}</p>}
+                    </form>
+                )}
+            </div>
+
+             {/* Placeholder for other Hospital actions */}
+             <div className="dashboard-section">
+                 <h3>Other Hospital Actions</h3>
+                 <p>(Placeholder: Add UI for verifying record integrity or managing doctors if implemented)</p>
+                 {/* Add form/button for adding doctors here if implemented */}
+             </div>
+
         </div>
-      </div>
-
-      <div className="dashboard-section">
-        <h2>Hospital Statistics</h2>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>Total Patients</h3>
-            <p className="stat-value">124</p>
-          </div>
-          <div className="stat-card">
-            <h3>Total Doctors</h3>
-            <p className="stat-value">18</p>
-          </div>
-          <div className="stat-card">
-            <h3>Records Created</h3>
-            <p className="stat-value">356</p>
-          </div>
-          <div className="stat-card">
-            <h3>Active Today</h3>
-            <p className="stat-value">42</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+    );
+}
 
 export default HospitalDashboard;

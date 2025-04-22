@@ -8,15 +8,634 @@ import axios from "axios"
 // You'll need to replace this with your actual contract ABI
 // You can get this from your artifacts after compiling your contract
 const CONTRACT_ABI = [
-  "function addRecord(string memory _ipfsHash) public",
-  "function viewRecords(address _patient) public view returns (Record[] memory)",
-  "function grantAccess(address _doctor) public",
-  "function revokeAccess(address _doctor) public",
-  "function hasAccess(address _patient, address _doctor) public view returns (bool)",
+ 
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AccessControlBadConfirmation",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "neededRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AccessControlUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        }
+      ],
+      "name": "AccessGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        }
+      ],
+      "name": "AccessRevoked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "ipfsHash",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recordedBy",
+          "type": "address"
+        }
+      ],
+      "name": "RecordAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "previousAdminRole",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "newAdminRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "RoleAdminChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleGrantedEvent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleRevoked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleRevokedEvent",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_ADMIN_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "addAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "addDoctor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "addHospital",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_ipfsHash",
+          "type": "string"
+        }
+      ],
+      "name": "addRecord",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRoleAdmin",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_doctor",
+          "type": "address"
+        }
+      ],
+      "name": "grantAccess",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "grantRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_patient",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_doctor",
+          "type": "address"
+        }
+      ],
+      "name": "hasSpecificAccess",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isAdmin",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isDoctor",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isHospital",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isPatient",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "registerPatient",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "removeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "removeDoctor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "removeHospital",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "removePatient",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "callerConfirmation",
+          "type": "address"
+        }
+      ],
+      "name": "renounceRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_doctor",
+          "type": "address"
+        }
+      ],
+      "name": "revokeAccess",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "revokeRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_patient",
+          "type": "address"
+        }
+      ],
+      "name": "viewRecords",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "ipfsHash",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "recordedBy",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PatientRecords.Record[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+   
 ]
 
 // Replace with your deployed contract address
-const CONTRACT_ADDRESS = "0x34E45500Bf9CE5E1327921D0f5674C83e53Cefe5"
+const CONTRACT_ADDRESS = "0x4B73196D4FF16169539c6228B82466501e0241c3"
 
 export const BlockchainContext = createContext()
 
@@ -49,7 +668,7 @@ export const BlockchainProvider = ({ children }) => {
 
         // For demo purposes, we'll set a role based on the account
         // In a real app, this would come from your contract or a database
-        determineUserRole(account)
+        //determineUserRole(account)
       } else {
         console.log("No authorized account found")
       }
@@ -76,7 +695,7 @@ export const BlockchainProvider = ({ children }) => {
       setupEventListener()
 
       // Determine user role
-      determineUserRole(accounts[0])
+      //determineUserRole(accounts[0])
       setLoading(false)
     } catch (error) {
       console.error(error)
@@ -106,24 +725,24 @@ export const BlockchainProvider = ({ children }) => {
     }
   }, [])
 
-  // For demo purposes, determine user role based on address
-  // In a real app, this would come from your contract or a database
-  const determineUserRole = (address) => {
-    // This is just a placeholder. In a real app, you would check the role from your contract
-    // or from a database. For now, we'll just assign roles based on the address.
-    const addressLower = address.toLowerCase()
-    const lastChar = addressLower.charAt(addressLower.length - 1)
-
-    if (["0", "1", "2", "3"].includes(lastChar)) {
-      setUserRole("patient")
-    } else if (["4", "5", "6"].includes(lastChar)) {
-      setUserRole("doctor")
-    } else if (["7", "8"].includes(lastChar)) {
-      setUserRole("hospital")
-    } else {
-      setUserRole("admin")
-    }
-  }
+//  // For demo purposes, determine user role based on address
+//  // In a real app, this would come from your contract or a database
+//  const determineUserRole = (address) => {
+//    // This is just a placeholder. In a real app, you would check the role from your contract
+//    // or from a database. For now, we'll just assign roles based on the address.
+//    const addressLower = address.toLowerCase()
+//    const lastChar = addressLower.charAt(addressLower.length - 1)
+//
+//    if (["0", "1", "2", "3"].includes(lastChar)) {
+//      setUserRole("patient")
+//    } else if (["4", "5", "6"].includes(lastChar)) {
+//      setUserRole("doctor")
+//    } else if (["7", "8"].includes(lastChar)) {
+//      setUserRole("hospital")
+//    } else {
+//      setUserRole("admin")
+//    }
+//  }
 
   // Add a medical record
   const addRecord = async (patientData) => {
@@ -234,7 +853,7 @@ export const BlockchainProvider = ({ children }) => {
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
         setCurrentAccount(accounts[0])
-        determineUserRole(accounts[0])
+        //determineUserRole(accounts[0])
       })
     }
 
@@ -244,6 +863,91 @@ export const BlockchainProvider = ({ children }) => {
       }
     }
   }, [checkIfWalletIsConnected])
+
+
+// Add this inside the BlockchainProvider component
+const getUserRole = useCallback(async () => {
+  if (contract && currentAccount) {
+    try {
+      setLoading(true); // Optional: show loading indicator
+      // Check roles in a sensible order (e.g., Admin > Hospital > Doctor > Patient)
+      if (await contract.isAdmin(currentAccount)) {
+        setUserRole("admin");
+      } else if (await contract.isHospital(currentAccount)) {
+        setUserRole("hospital");
+      } else if (await contract.isDoctor(currentAccount)) {
+        setUserRole("doctor");
+      } else if (await contract.isPatient(currentAccount)) {
+        setUserRole("patient");
+      } else {
+        setUserRole(null); // Not registered or role removed
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error("Error getting user role:", err);
+      setError("Could not determine user role from contract.");
+      setUserRole(null);
+      setLoading(false);
+    }
+  } else {
+    setUserRole(null); // No contract or account connected
+  }
+}, [contract, currentAccount]);
+
+// Call getUserRole when account changes or contract is set up
+useEffect(() => {
+  if (contract && currentAccount) {
+    getUserRole();
+  }
+}, [contract, currentAccount, getUserRole]); // Add getUserRole dependency
+
+// Modify the existing useEffect for account changes:
+useEffect(() => {
+    checkIfWalletIsConnected(); // Keep this
+
+    const handleAccountsChanged = (accounts) => {
+        if (accounts.length > 0) {
+            setCurrentAccount(accounts[0]);
+            // We don't call determineUserRole anymore,
+            // the other useEffect will trigger getUserRole based on currentAccount change
+        } else {
+            setCurrentAccount("");
+            setUserRole(null); // Clear role if disconnected
+        }
+    };
+
+    if (window.ethereum) {
+        window.ethereum.on("accountsChanged", handleAccountsChanged);
+    }
+
+    return () => {
+        if (window.ethereum) {
+            window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        }
+    };
+}, [checkIfWalletIsConnected]); // Removed determineUserRole call here
+
+// Example function to be added inside BlockchainProvider
+const registerPatientByHospital = async (patientAddress) => {
+    if (!contract || userRole !== 'hospital') {
+        setError("Only hospitals can register patients.");
+        return false;
+    }
+    try {
+        setLoading(true);
+        const tx = await contract.registerPatient(patientAddress);
+        await tx.wait();
+        setLoading(false);
+        console.log(`Patient ${patientAddress} registered successfully.`);
+        // Maybe refresh user list or show success message
+        return true;
+    } catch (err) {
+        console.error("Error registering patient:", err);
+        setError("Failed to register patient.");
+        setLoading(false);
+        return false;
+    }
+};
 
   return (
     <BlockchainContext.Provider
