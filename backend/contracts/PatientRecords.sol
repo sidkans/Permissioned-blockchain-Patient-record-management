@@ -56,7 +56,6 @@ contract PatientRecords is Context, AccessControl {
     }
 
     function addDoctor(address account) public onlyRole(ADMIN_ROLE) {
-        // Consider if Hospitals should also be able to add doctors under them
         grantRole(DOCTOR_ROLE, account);
         emit RoleGrantedEvent(DOCTOR_ROLE, account, _msgSender());
     }
@@ -64,6 +63,11 @@ contract PatientRecords is Context, AccessControl {
     function removeDoctor(address account) public onlyRole(ADMIN_ROLE) {
         revokeRole(DOCTOR_ROLE, account);
         emit RoleRevokedEvent(DOCTOR_ROLE, account, _msgSender());
+    }
+
+    function addPatient(address account) public onlyRole(ADMIN_ROLE) {
+        grantRole(PATIENT_ROLE, account);
+        emit RoleGrantedEvent(PATIENT_ROLE, account, _msgSender());
     }
 
     function removePatient(address account) public onlyRole(ADMIN_ROLE) {
