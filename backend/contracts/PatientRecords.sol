@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/Context.sol"; // Required for _msgSender()
 
 // Define roles
 bytes32 constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-bytes32 constant HOSPITAL_ROLE = keccak256("HOSPITAL_ROLE");
 bytes32 constant DOCTOR_ROLE = keccak256("DOCTOR_ROLE");
 bytes32 constant PATIENT_ROLE = keccak256("PATIENT_ROLE");
 /**
@@ -56,16 +55,6 @@ contract PatientRecords is Context, AccessControl {
         emit RoleRevokedEvent(ADMIN_ROLE, account, _msgSender());
     }
 
-    function addHospital(address account) public onlyRole(ADMIN_ROLE) {
-        grantRole(HOSPITAL_ROLE, account);
-        emit RoleGrantedEvent(HOSPITAL_ROLE, account, _msgSender());
-    }
-
-    function removeHospital(address account) public onlyRole(ADMIN_ROLE) {
-        revokeRole(HOSPITAL_ROLE, account);
-        emit RoleRevokedEvent(HOSPITAL_ROLE, account, _msgSender());
-    }
-
     function addDoctor(address account) public onlyRole(ADMIN_ROLE) {
         // Consider if Hospitals should also be able to add doctors under them
         grantRole(DOCTOR_ROLE, account);
@@ -77,18 +66,8 @@ contract PatientRecords is Context, AccessControl {
         emit RoleRevokedEvent(DOCTOR_ROLE, account, _msgSender());
     }
 
-    // --- Patient Registration (Hospital Role Required as per requirements doc) ---
-
-    function registerPatient(address account) public onlyRole(HOSPITAL_ROLE) {
-        // Grant patient role - Patients might self-register in other models,
-        // but requirements state hospital registration.
-        grantRole(PATIENT_ROLE, account);
-        emit RoleGrantedEvent(PATIENT_ROLE, account, _msgSender());
-    }
-
     function removePatient(address account) public onlyRole(ADMIN_ROLE) {
-         // Only Admin should likely remove patients entirely? Or hospital that registered?
-         // Decide on the policy. For now, Admin.
+         // Only Admin should likely remove patients entirely
         revokeRole(PATIENT_ROLE, account);
         emit RoleRevokedEvent(PATIENT_ROLE, account, _msgSender());
         // Consider revoking doctor access related to this patient as well
@@ -167,10 +146,6 @@ contract PatientRecords is Context, AccessControl {
 
     function isAdmin(address account) public view returns (bool) {
         return hasRole(ADMIN_ROLE, account);
-    }
-
-    function isHospital(address account) public view returns (bool) {
-        return hasRole(HOSPITAL_ROLE, account);
     }
 
     function isDoctor(address account) public view returns (bool) {

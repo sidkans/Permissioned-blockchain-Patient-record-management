@@ -631,70 +631,41 @@ const CONTRACT_ABI = [
       "stateMutability": "view",
       "type": "function"
     }
+
    
 ]
 
 // Replace with your deployed contract address
-const CONTRACT_ADDRESS = "0x4B73196D4FF16169539c6228B82466501e0241c3"
+const CONTRACT_ADDRESS = "0x27A822ab65B9bbEa0B1612CE804BE718d7de2001"
 
 export const BlockchainContext = createContext()
 
 export const BlockchainProvider = ({ children }) => {
   const [currentAccount, setCurrentAccount] = useState("")
-  // eslint-disable-next-line no-unused-vars
-  const [provider, setProvider] = useState(null)
-  // eslint-disable-next-line no-unused-vars
-  const [signer, setSigner] = useState(null)
   const [contract, setContract] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [userRole, setUserRole] = useState(null) // 'patient', 'doctor', 'hospital', 'admin'
+  const [userRole, setUserRole] = useState(null) // 'patient', 'doctor', 'admin'
   const [records, setRecords] = useState([])
 
-  // For demo purposes, determine user role based on address
-  // In a real app, this would come from your contract or a database
-  const determineUserRole = useCallback((address) => {
-    // This is just a placeholder. In a real app, you would check the role from your contract
-    // or from a database. For now, we'll just assign roles based on the address.
-    const addressLower = address.toLowerCase()
-    const lastChar = addressLower.charAt(addressLower.length - 1)
-
-    let role
-    if (["0", "1", "2", "3"].includes(lastChar)) {
-      role = "patient"
-    } else if (["4", "5", "6"].includes(lastChar)) {
-      role = "doctor"
-    } else if (["7", "8"].includes(lastChar)) {
-      role = "hospital"
-    } else {
-      role = "admin"
-    }
-
-    setUserRole(role)
-    // Save to localStorage for persistence
-    localStorage.setItem("userRole", role)
-  }, [])
-
-  // Setup event listener
-  const setupEventListener = useCallback(async () => {
-    try {
-      const { ethereum } = window
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum)
-        const signer = provider.getSigner()
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-
-        setProvider(provider)
-        setSigner(signer)
-        setContract(contract)
-      } else {
-        console.log("Ethereum object doesn't exist!")
+    // Setup event listener
+    const setupEventListener = useCallback(async () => {
+      try {
+        const { ethereum } = window
+  
+        if (ethereum) {
+          const provider = new ethers.providers.Web3Provider(ethereum)
+          const signer = provider.getSigner()
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+  
+          setContract(contract)
+        } else {
+          console.log("Ethereum object doesn't exist!")
+        }
+      } catch (error) {
+        console.error(error)
       }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [])
+    }, [])
 
   // Check if wallet is connected
   const checkIfWalletIsConnected = useCallback(async () => {
@@ -723,7 +694,7 @@ export const BlockchainProvider = ({ children }) => {
       console.error(error)
       setError("Error connecting to wallet")
     }
-  }, [determineUserRole, setupEventListener])
+  },[setupEventListener])
 
   // Connect wallet
   const connectWallet = async () => {
@@ -750,26 +721,6 @@ export const BlockchainProvider = ({ children }) => {
       setLoading(false)
     }
   }
-
-
-//  // For demo purposes, determine user role based on address
-//  // In a real app, this would come from your contract or a database
-//  const determineUserRole = (address) => {
-//    // This is just a placeholder. In a real app, you would check the role from your contract
-//    // or from a database. For now, we'll just assign roles based on the address.
-//    const addressLower = address.toLowerCase()
-//    const lastChar = addressLower.charAt(addressLower.length - 1)
-//
-//    if (["0", "1", "2", "3"].includes(lastChar)) {
-//      setUserRole("patient")
-//    } else if (["4", "5", "6"].includes(lastChar)) {
-//      setUserRole("doctor")
-//    } else if (["7", "8"].includes(lastChar)) {
-//      setUserRole("hospital")
-//    } else {
-//      setUserRole("admin")
-//    }
-//  }
 
   // Add a medical record
   const addRecord = async (patientData) => {
@@ -889,8 +840,55 @@ export const BlockchainProvider = ({ children }) => {
         window.ethereum.removeAllListeners("accountsChanged")
       }
     }
-  }, [checkIfWalletIsConnected, determineUserRole])
+  }, [checkIfWalletIsConnected])
 
+  const addRole = async (role, address) => {
+    try {
+      setLoading(true);
+      let tx;
+      if (role === "admin") {
+        tx = await contract.addAdmin(address);
+      } else if (role === "doctor") {
+        tx = await contract.addDoctor(address);
+      } else if (role === "patient") {
+        tx = await contract.registerPatient(address);
+      } else {
+        throw new Error("Invalid role");
+      }
+      await tx.wait();
+      setLoading(false);
+      return true;
+    } catch (error) {
+      console.error(`Error adding ${role}:`, error);
+      setError(`Failed to add ${role}`);
+      setLoading(false);
+      return false;
+    }
+  };
+  
+  const removeRole = async (role, address) => {
+    try {
+      setLoading(true);
+      let tx;
+      if (role === "admin") {
+        tx = await contract.removeAdmin(address);
+      } else if (role === "doctor") {
+        tx = await contract.removeDoctor(address);
+      } else if (role === "patient") {
+        tx = await contract.removePatient(address);
+      } else {
+        throw new Error("Invalid role");
+      }
+      await tx.wait();
+      setLoading(false);
+      return true;
+    } catch (error) {
+      console.error(`Error removing ${role}:`, error);
+      setError(`Failed to remove ${role}`);
+      setLoading(false);
+      return false;
+    }
+  };
 
 // Add this inside the BlockchainProvider component
 const getUserRole = useCallback(async () => {
@@ -900,8 +898,6 @@ const getUserRole = useCallback(async () => {
       // Check roles in a sensible order (e.g., Admin > Hospital > Doctor > Patient)
       if (await contract.isAdmin(currentAccount)) {
         setUserRole("admin");
-      } else if (await contract.isHospital(currentAccount)) {
-        setUserRole("hospital");
       } else if (await contract.isDoctor(currentAccount)) {
         setUserRole("doctor");
       } else if (await contract.isPatient(currentAccount)) {
@@ -953,29 +949,6 @@ useEffect(() => {
         }
     };
 }, [checkIfWalletIsConnected]); // Removed determineUserRole call here
-
-// Example function to be added inside BlockchainProvider
-const registerPatientByHospital = async (patientAddress) => {
-    if (!contract || userRole !== 'hospital') {
-        setError("Only hospitals can register patients.");
-        return false;
-    }
-    try {
-        setLoading(true);
-        const tx = await contract.registerPatient(patientAddress);
-        await tx.wait();
-        setLoading(false);
-        console.log(`Patient ${patientAddress} registered successfully.`);
-        // Maybe refresh user list or show success message
-        return true;
-    } catch (err) {
-        console.error("Error registering patient:", err);
-        setError("Failed to register patient.");
-        setLoading(false);
-        return false;
-    }
-};
-
   return (
     <BlockchainContext.Provider
       value={{
@@ -990,6 +963,8 @@ const registerPatientByHospital = async (patientAddress) => {
         revokeAccess,
         checkAccess,
         records,
+        addRole,
+        removeRole
       }}
     >
       {children}

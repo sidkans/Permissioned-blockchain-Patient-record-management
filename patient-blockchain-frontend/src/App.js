@@ -6,7 +6,6 @@ import Home from "./pages/Home"
 import Login from "./pages/Login"
 import PatientDashboard from "./pages/PatientDashboard"
 import DoctorDashboard from "./pages/DoctorDashboard"
-import HospitalDashboard from "./pages/HospitalDashboard"
 import AdminDashboard from "./pages/AdminDashboard"
 
 // Components
@@ -54,14 +53,6 @@ const App = () => {
               element={
                 <ProtectedRoute role="doctor">
                   <DoctorDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/hospital-dashboard"
-              element={
-                <ProtectedRoute role="hospital">
-                  <HospitalDashboard />
                 </ProtectedRoute>
               }
             />

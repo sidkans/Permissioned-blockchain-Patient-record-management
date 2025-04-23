@@ -9,35 +9,46 @@ function AdminDashboard() {
         userRole,
         loading,
         error,
-        // --- Assume these functions are added to BlockchainContext ---
-        // addAdmin,
-        // removeAdmin,
-        // addHospital,
-        // removeHospital,
-        // addDoctor,
-        // removeDoctor,
-        // removePatient
+        addRole, // Function to add roles
+        removeRole, // Function to remove roles
     } = useContext(BlockchainContext);
 
-    // Add state variables for forms as needed, e.g.:
-    const [newAdminAddress, setNewAdminAddress] = useState('');
-    const [newHospitalAddress, setNewHospitalAddress] = useState('');
-    // ... etc. for other forms
+    // State variables for Assign Role form
+    const [assignAddress, setAssignAddress] = useState('');
+    const [assignRole, setAssignRole] = useState('');
 
-    const handleAddAdmin = async (e) => {
+    // State variables for Remove Role form
+    const [removeAddress, setRemoveAddress] = useState('');
+    const [removeSelectedRole, setRemoveSelectedRole] = useState('');
+
+    // Handlers for adding and removing roles
+    const handleAddRole = async (e) => {
         e.preventDefault();
-        // Call context function: await addAdmin(newAdminAddress);
-        // Handle loading, success, error messages
-        alert("Add Admin functionality not fully implemented yet."); // Placeholder
+        if (!assignRole || !assignAddress) {
+            alert("Please select a role and enter an address.");
+            return;
+        }
+        const success = await addRole(assignRole, assignAddress);
+        if (success) {
+            alert(`${assignRole} role assigned to ${assignAddress}`);
+            setAssignAddress('');
+            setAssignRole('');
+        }
     };
 
-    const handleAddHospital = async (e) => {
+    const handleRemoveRole = async (e) => {
         e.preventDefault();
-         // Call context function: await addHospital(newHospitalAddress);
-        alert("Add Hospital functionality not fully implemented yet."); // Placeholder
+        if (!removeSelectedRole || !removeAddress) {
+            alert("Please select a role and enter an address.");
+            return;
+        }
+        const success = await removeRole(removeSelectedRole, removeAddress);
+        if (success) {
+            alert(`${removeSelectedRole} role removed from ${removeAddress}`);
+            setRemoveAddress('');
+            setRemoveSelectedRole('');
+        }
     };
-     // --- Add handlers for other admin actions ---
-
 
     // Conditional Rendering based on Role and Connection
     if (!currentAccount) {
@@ -45,12 +56,12 @@ function AdminDashboard() {
     }
 
     if (loading && userRole === null) { // Show loading while role is being verified initially
-       return <div className="dashboard-container"><Loading /></div>;
+        return <div className="dashboard-container"><Loading /></div>;
     }
 
-     if (userRole === null && !loading) {
+    if (userRole === null && !loading) {
         // Still determining role or role not found
-       return <div className="dashboard-container"><p>Verifying user role...</p></div>;
+        return <div className="dashboard-container"><p>Verifying user role...</p></div>;
     }
 
     if (userRole !== 'admin') {
@@ -62,43 +73,65 @@ function AdminDashboard() {
         <div className="dashboard-container admin-dashboard">
             <h2>Admin Dashboard</h2>
             <p>Welcome, Admin {currentAccount}</p>
-            {error && <p className="error-message">Context Error: {error}</p>}
+            {error && <p className="error-message">Error: {error}</p>}
 
             {/* Section for Admin Actions */}
             <div className="dashboard-section">
                 <h3>Manage Roles</h3>
 
-                {/* Example Form: Add Admin */}
-                <form onSubmit={handleAddAdmin} style={{ marginBottom: '1em' }}>
-                    <h4>Add Admin</h4>
+                {/* Form to Add Role */}
+                <form onSubmit={handleAddRole} style={{ marginBottom: '1em' }}>
+                    <h4>Assign Role</h4>
                     <input
                         type="text"
-                        value={newAdminAddress}
-                        onChange={(e) => setNewAdminAddress(e.target.value)}
-                        placeholder="New Admin Address"
+                        value={assignAddress}
+                        onChange={(e) => setAssignAddress(e.target.value)}
+                        placeholder="Enter Address"
                         required
                         className="address-input"
                     />
-                    <button type="submit" disabled={loading}>Add Admin</button>
+                    <select
+                        value={assignRole}
+                        onChange={(e) => setAssignRole(e.target.value)}
+                        required
+                        className="role-select"
+                    >
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="patient">Patient</option>
+                    </select>
+                    <button type="submit" disabled={loading}>
+                        {loading ? "Assigning..." : "Add Role"}
+                    </button>
                 </form>
 
-                {/* Example Form: Add Hospital */}
-                 <form onSubmit={handleAddHospital} style={{ marginBottom: '1em' }}>
-                    <h4>Add Hospital</h4>
+                {/* Form to Remove Role */}
+                <form onSubmit={handleRemoveRole}>
+                    <h4>Remove Role</h4>
                     <input
                         type="text"
-                        value={newHospitalAddress}
-                        onChange={(e) => setNewHospitalAddress(e.target.value)}
-                        placeholder="New Hospital Address"
+                        value={removeAddress}
+                        onChange={(e) => setRemoveAddress(e.target.value)}
+                        placeholder="Enter Address"
                         required
                         className="address-input"
                     />
-                    <button type="submit" disabled={loading}>Add Hospital</button>
+                    <select
+                        value={removeSelectedRole}
+                        onChange={(e) => setRemoveSelectedRole(e.target.value)}
+                        required
+                        className="role-select"
+                    >
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="patient">Patient</option>
+                    </select>
+                    <button type="submit" disabled={loading}>
+                        {loading ? "Removing..." : "Remove Role"}
+                    </button>
                 </form>
-
-                {/* --- Add forms/buttons for removeAdmin, add/removeHospital, add/removeDoctor, removePatient --- */}
-                <p>(Implement other Admin forms/buttons here)</p>
-
             </div>
         </div>
     );
