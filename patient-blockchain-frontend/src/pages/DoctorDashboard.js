@@ -1,94 +1,121 @@
-"use client"
+import React, { useState, useContext, useCallback } from 'react';
+import { BlockchainContext } from '../context/BlockchainContext'; // Adjust path if needed
+import RecordCard from '../components/RecordCard'; // Adjust path if needed
+import Loading from '../components/Loading'; // Adjust path if needed
+import '../styles/Dashboard.css'; // Adjust path if needed
 
-import { useState } from "react"
-import Loading from "../components/Loading"
-import "../styles/Dashboard.css"
+function DoctorDashboard() {
+    const {
+        currentAccount,
+        userRole,
+        viewRecords,
+        checkAccess, // Function to check if doctor has access to a patient
+        loading,
+        error,
+    } = useContext(BlockchainContext);
 
-const DoctorDashboard = () => {
-  const [patientAddress, setPatientAddress] = useState("")
-  const [patientRecords, setPatientRecords] = useState([])
-  const [hasAccess, setHasAccess] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+    const [searchAddress, setSearchAddress] = useState('');
+    const [patientRecords, setPatientRecords] = useState([]);
+    const [searchError, setSearchError] = useState('');
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [accessDenied, setAccessDenied] = useState(false);
 
-  const handleCheckAccess = async () => {
-    if (!patientAddress) return
+    const handleSearch = useCallback(async (e) => {
+        e.preventDefault();
+        if (!searchAddress || !currentAccount) return;
 
-    setLoading(true)
-    try {
-      // This would be implemented with your actual contract
-      // const hasAccess = await contract.checkAccess(patientAddress)
-      const hasAccess = true // Placeholder
-      setHasAccess(hasAccess)
+        setSearchLoading(true);
+        setPatientRecords([]);
+        setSearchError('');
+        setAccessDenied(false);
 
-      if (hasAccess) {
-        // This would fetch records from your contract
-        // const records = await contract.getPatientRecords(patientAddress)
-        const records = [] // Placeholder
-        setPatientRecords(records)
-      }
-    } catch (err) {
-      console.error(err)
-      setError("Error checking access")
-    } finally {
-      setLoading(false)
+        try {
+            // 1. Check if doctor has access granted by the patient
+            const hasAccess = await checkAccess(searchAddress, currentAccount);
+
+            if (hasAccess) {
+                 // 2. If access granted, view the records
+                const recordsResult = await viewRecords(searchAddress);
+                setPatientRecords(recordsResult || []); // Ensure it's an array
+                 if (!recordsResult || recordsResult.length === 0) {
+                    setSearchError("No records found for this patient, or access issue.");
+                }
+            } else {
+                setAccessDenied(true);
+                setSearchError("Access denied by patient or patient not found.");
+            }
+        } catch (err) {
+            console.error("Error searching records:", err);
+            setSearchError(`Failed to search records: ${err.message || 'Unknown error'}`);
+        } finally {
+            setSearchLoading(false);
+        }
+    }, [searchAddress, currentAccount, checkAccess, viewRecords]); // Added dependencies
+
+    // Conditional Rendering based on Role and Connection
+    if (!currentAccount) {
+        return <div className="dashboard-container"><p>Please connect your wallet.</p></div>;
     }
-  }
 
-  if (loading) return <Loading />
+     if (loading && userRole === null) { // Show loading while role is being verified initially
+        return <div className="dashboard-container"><Loading /></div>;
+    }
 
-  return (
-    <div className="dashboard doctor-dashboard">
-      <h1>Doctor Dashboard</h1>
+    if (userRole === null && !loading) {
+         // Still determining role or role not found
+        return <div className="dashboard-container"><p>Verifying user role...</p></div>;
+    }
 
-      <div className="patient-lookup">
-        <h2>Patient Record Access</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
+    if (userRole !== 'doctor') {
+        return <div className="dashboard-container"><p>Access Denied. You do not have the required 'Doctor' role.</p></div>;
+    }
 
-        <div className="form-group">
-          <label htmlFor="patientAddress">Patient Ethereum Address</label>
-          <div className="address-input-group">
-            <input
-              type="text"
-              id="patientAddress"
-              className="form-control"
-              value={patientAddress}
-              onChange={(e) => setPatientAddress(e.target.value)}
-              placeholder="0x..."
-            />
-            <button onClick={handleCheckAccess} className="btn">
-              Check Access
-            </button>
-          </div>
+    // --- Render Doctor Dashboard UI ---
+    return (
+        <div className="dashboard-container doctor-dashboard">
+            <h2>Doctor Dashboard</h2>
+            <p>Welcome, {currentAccount}</p>
+            {error && <p className="error-message">Context Error: {error}</p>}
+
+            {/* Section to Search Patient Records */}
+            <div className="dashboard-section">
+                <h3>Search Patient Records</h3>
+                <form onSubmit={handleSearch} className="search-form">
+                    <input
+                        type="text"
+                        value={searchAddress}
+                        onChange={(e) => setSearchAddress(e.target.value)}
+                        placeholder="Enter Patient Address"
+                        required
+                        className="address-input"
+                    />
+                    <button type="submit" disabled={searchLoading || !searchAddress}>
+                        {searchLoading ? 'Searching...' : 'Search Records'}
+                    </button>
+                </form>
+                {searchError && <p className="error-message">{searchError}</p>}
+                {accessDenied && <p className="warning-message">You do not have permission to view this patient's records.</p>}
+            </div>
+
+             {/* Section to Display Searched Records */}
+             {!accessDenied && patientRecords.length > 0 && (
+                 <div className="dashboard-section">
+                    <h3>Records for {searchAddress}</h3>
+                    <div className="records-grid">
+                        {patientRecords.map((record, index) => (
+                            <RecordCard key={index} ipfsHash={record.ipfsHash} timestamp={record.timestamp} />
+                        ))}
+                    </div>
+                </div>
+             )}
+              {!accessDenied && !searchLoading && patientRecords.length === 0 && searchAddress && !searchError && (
+                 <div className="dashboard-section">
+                    <p>No records found for {searchAddress}.</p>
+                 </div>
+                )}
+
         </div>
-
-        {patientAddress && (
-          <div className="access-status">
-            <p>
-              Access Status:
-              {hasAccess ? (
-                <span className="access-granted">Granted</span>
-              ) : (
-                <span className="access-denied">Denied</span>
-              )}
-            </p>
-          </div>
-        )}
-
-        {hasAccess && (
-          <div className="patient-records">
-            <h3>Patient Records</h3>
-            {patientRecords.length === 0 ? (
-              <p>No records found for this patient.</p>
-            ) : (
-              <div className="records-grid">{/* Map through patient records here */}</div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
+    );
 }
 
-export default DoctorDashboard
-
+export default DoctorDashboard;

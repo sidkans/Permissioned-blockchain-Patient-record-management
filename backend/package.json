@@ -3,7 +3,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "ethers": "^6.13.5",
-    "hardhat": "^2.22.19"
+    "hardhat": "^2.23.0"
   },
   "version": "1.0.0",
   "main": "hardhat.config.js",
@@ -12,7 +12,6 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",
     "axios": "^1.8.4",
@@ -20,5 +19,15 @@
     "form-data": "^4.0.2",
     "ipfs-http-client": "^60.0.1",
     "web3.storage": "^4.5.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Coologtvil/Sa-ryung.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/Coologtvil/Sa-ryung/issues"
+  },
+  "homepage": "https://github.com/Coologtvil/Sa-ryung#readme",
+  "description": ""
 }
