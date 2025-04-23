@@ -23,7 +23,7 @@ function AdminDashboard() {
 
     // Handlers for adding and removing roles
     const handleAddRole = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!assignRole || !assignAddress) {
             alert("Please select a role and enter an address.");
             return;
@@ -37,7 +37,7 @@ function AdminDashboard() {
     };
 
     const handleRemoveRole = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!removeSelectedRole || !removeAddress) {
             alert("Please select a role and enter an address.");
             return;
