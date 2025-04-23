@@ -1,156 +1,123 @@
-"use client"
+import React, { useState, useEffect, useContext } from 'react';
+import { BlockchainContext } from '../context/BlockchainContext'; // Adjust path if needed
+import AccessControl from '../components/AccessControl'; // Adjust path if needed
+import RecordCard from '../components/RecordCard'; // Adjust path if needed
+import Loading from '../components/Loading'; // Adjust path if needed
+import '../styles/Dashboard.css'; // Adjust path if needed
 
-import { useState, useEffect, useContext } from "react"
-import { BlockchainContext } from "../context/BlockchainContext"
-import RecordCard from "../components/RecordCard"
-import AccessControl from "../components/AccessControl"
-import Loading from "../components/Loading"
-import "../styles/Dashboard.css"
+function PatientDashboard() {
+    const {
+        currentAccount,
+        userRole,
+        addRecord,
+        viewRecords,
+        records, // Assuming 'records' state holds records fetched by viewRecords
+        loading,
+        error,
+        // grantAccess, revokeAccess are likely handled within AccessControl component directly via context
+    } = useContext(BlockchainContext);
 
-const PatientDashboard = () => {
-  const { currentAccount, addRecord, viewRecords, loading, records } = useContext(BlockchainContext)
-  const [newRecord, setNewRecord] = useState({
-    diagnosis: "",
-    treatment: "",
-    medications: "",
-    notes: "",
-  })
-  const [activeTab, setActiveTab] = useState("records")
+    const [recordData, setRecordData] = useState(''); // Example state for adding a record
+    const [fetchError, setFetchError] = useState('');
 
-  useEffect(() => {
-    if (currentAccount) {
-      loadRecords()
+    // Fetch records when the component mounts or account changes
+    useEffect(() => {
+        if (currentAccount && userRole === 'patient') {
+            viewRecords(currentAccount).catch(err => {
+                console.error("Error fetching patient records:", err);
+                setFetchError("Failed to fetch records.");
+            });
+        }
+    }, [currentAccount, userRole, viewRecords]); // viewRecords added as dependency
+
+    const handleAddRecord = async (e) => {
+        e.preventDefault();
+        if (!recordData) {
+            alert("Record data cannot be empty");
+            return;
+        }
+        // Basic validation - In real app, use proper forms and validation
+        const recordJson = {
+            details: recordData, // Structure your record data as needed
+            date: new Date().toISOString(),
+        };
+
+        try {
+            await addRecord(recordJson); // addRecord uploads to IPFS and calls contract
+            setRecordData(''); // Clear input field
+            // Optionally re-fetch records
+            await viewRecords(currentAccount);
+            alert('Record added successfully!');
+        } catch (err) {
+            console.error("Error in handleAddRecord:", err);
+            alert(`Failed to add record: ${err.message || error}`); // Show specific error if available
+        }
+    };
+
+    // Conditional Rendering based on Role and Connection
+    if (!currentAccount) {
+        return <div className="dashboard-container"><p>Please connect your wallet.</p></div>;
     }
-  }, [currentAccount])
 
-  const loadRecords = async () => {
-    await viewRecords(currentAccount)
-  }
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setNewRecord({
-      ...newRecord,
-      [name]: value,
-    })
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      await addRecord(newRecord)
-      setNewRecord({
-        diagnosis: "",
-        treatment: "",
-        medications: "",
-        notes: "",
-      })
-      loadRecords()
-    } catch (error) {
-      console.error("Error adding record:", error)
+    if (loading && !records.length) { // Show loading only if records aren't already displayed
+        return <div className="dashboard-container"><Loading /></div>;
     }
-  }
 
-  if (loading) return <Loading />
+    if (userRole === null && !loading) {
+        // Still determining role or role not found
+        return <div className="dashboard-container"><p>Verifying user role...</p></div>;
+    }
 
-  return (
-    <div className="dashboard patient-dashboard">
-      <h1>Patient Dashboard</h1>
-      <p className="account-info">Connected Account: {currentAccount}</p>
+    if (userRole !== 'patient') {
+        return <div className="dashboard-container"><p>Access Denied. You do not have the required 'Patient' role.</p></div>;
+    }
 
-      <div className="dashboard-tabs">
-        <button
-          className={`tab-btn ${activeTab === "records" ? "active" : ""}`}
-          onClick={() => setActiveTab("records")}
-        >
-          My Records
-        </button>
-        <button className={`tab-btn ${activeTab === "add" ? "active" : ""}`} onClick={() => setActiveTab("add")}>
-          Add Record
-        </button>
-        <button className={`tab-btn ${activeTab === "access" ? "active" : ""}`} onClick={() => setActiveTab("access")}>
-          Access Control
-        </button>
-      </div>
+    // --- Render Patient Dashboard UI ---
+    return (
+        <div className="dashboard-container patient-dashboard">
+            <h2>Patient Dashboard</h2>
+            <p>Welcome, {currentAccount}</p>
+            {error && <p className="error-message">Error: {error}</p>}
+            {fetchError && <p className="error-message">Error: {fetchError}</p>}
 
-      <div className="dashboard-content">
-        {activeTab === "records" && (
-          <div className="records-section">
-            <h2>My Medical Records</h2>
-            {records.length === 0 ? (
-              <p>No records found. Add your first medical record.</p>
-            ) : (
-              <div className="records-grid">
-                {records.map((record, index) => (
-                  <RecordCard key={index} record={record} index={index} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+            {/* Section to Add New Record */}
+            <div className="dashboard-section">
+                <h3>Add New Medical Record</h3>
+                <form onSubmit={handleAddRecord} className="record-form">
+                    <textarea
+                        value={recordData}
+                        onChange={(e) => setRecordData(e.target.value)}
+                        placeholder="Enter record details..."
+                        rows="4"
+                        required
+                    />
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'Adding...' : 'Add Record'}
+                    </button>
+                </form>
+            </div>
 
-        {activeTab === "add" && (
-          <div className="add-record-section">
-            <h2>Add New Medical Record</h2>
-            <form onSubmit={handleSubmit} className="add-record-form">
-              <div className="form-group">
-                <label htmlFor="diagnosis">Diagnosis</label>
-                <input
-                  type="text"
-                  id="diagnosis"
-                  name="diagnosis"
-                  className="form-control"
-                  value={newRecord.diagnosis}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="treatment">Treatment</label>
-                <input
-                  type="text"
-                  id="treatment"
-                  name="treatment"
-                  className="form-control"
-                  value={newRecord.treatment}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="medications">Medications</label>
-                <input
-                  type="text"
-                  id="medications"
-                  name="medications"
-                  className="form-control"
-                  value={newRecord.medications}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="notes">Additional Notes</label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  className="form-control"
-                  value={newRecord.notes}
-                  onChange={handleInputChange}
-                  rows="4"
-                ></textarea>
-              </div>
-              <button type="submit" className="btn btn-primary">
-                Add Record
-              </button>
-            </form>
-          </div>
-        )}
+            {/* Section to View Records */}
+            <div className="dashboard-section">
+                <h3>Your Medical Records</h3>
+                {loading && records.length === 0 && <p>Loading records...</p>}
+                {!loading && records.length === 0 && <p>No records found.</p>}
+                <div className="records-grid">
+                    {records.map((record, index) => (
+                        // Assuming record structure from contract is { ipfsHash, timestamp, recordedBy }
+                        <RecordCard key={index} ipfsHash={record.ipfsHash} timestamp={record.timestamp} />
+                    ))}
+                </div>
+            </div>
 
-        {activeTab === "access" && <AccessControl />}
-      </div>
-    </div>
-  )
+            {/* Section for Access Control */}
+            <div className="dashboard-section">
+                <h3>Manage Doctor Access</h3>
+                {/* AccessControl component likely fetches context itself */}
+                <AccessControl />
+            </div>
+        </div>
+    );
 }
 
-export default PatientDashboard
-
+export default PatientDashboard;
