@@ -1,30 +1,19 @@
 "use client"
 
-import { useContext, useEffect, useState } from "react"
+import { useContext } from "react"
 import { useNavigate } from "react-router-dom"
 import { BlockchainContext } from "../context/BlockchainContext"
 import "../styles/Home.css"
 
 const Home = () => {
   const { currentAccount, connectWallet, userRole } = useContext(BlockchainContext)
-  const [localUserRole, setLocalUserRole] = useState(localStorage.getItem("userRole"))
   const navigate = useNavigate()
 
-  useEffect(() => {
-    // Update local state when context changes
-    if (userRole) {
-      setLocalUserRole(userRole)
-    }
-  }, [userRole])
-
-  const handleDashboardClick = (e) => {
-    e.preventDefault()
-    const role = localUserRole || userRole
-
-    if (!role) {
+  const handleDashboardClick = () => {
+    if (!userRole) {
       navigate("/login")
     } else {
-      navigate(`/${role}-dashboard`)
+      navigate(`/${userRole}-dashboard`)
     }
   }
 
