@@ -751,26 +751,6 @@ export const BlockchainProvider = ({ children }) => {
     }
   }
 
-  // Setup event listener
-  const setupEventListener = useCallback(async () => {
-    try {
-      const { ethereum } = window
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum)
-        const signer = provider.getSigner()
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-
-        setProvider(provider)
-        setSigner(signer)
-        setContract(contract)
-      } else {
-        console.log("Ethereum object doesn't exist!")
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [])
 
 //  // For demo purposes, determine user role based on address
 //  // In a real app, this would come from your contract or a database
