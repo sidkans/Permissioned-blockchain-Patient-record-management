@@ -676,26 +676,58 @@ export const BlockchainProvider = ({ children }) => {
   }
 
   // Add a medical record
-  const addRecord = async (patientData) => {
+  const addRecord = async (ipfsHash) => {
     try {
-      setLoading(true)
+      setLoading(true);
+      console.log("Adding record with hash:", ipfsHash);
+      
+      // Check if contract is initialized
+      if (!contract) {
+        throw new Error("Contract not initialized");
+      }
 
-      // Upload to IPFS via Pinata
-      const ipfsHash = await uploadToPinata(patientData)
+      // Check if the user has the PATIENT_ROLE
+      const isPatientRole = await contract.isPatient(currentAccount);
+      console.log("Current account has PATIENT_ROLE:", isPatientRole);
+      
+      if (!isPatientRole) {
+        setLoading(false);
+        throw new Error("You don't have permission to add records. You need the Patient role.");
+      }
 
-      // Store hash in smart contract
-      const tx = await contract.addRecord(ipfsHash)
-      await tx.wait()
-
-      setLoading(false)
-      return ipfsHash
+      // Add gas limit to avoid transaction failures
+      console.log("Sending transaction to add record...");
+      const tx = await contract.addRecord(ipfsHash, {
+        gasLimit: 300000  // Explicit gas limit to avoid estimation failures
+      });
+      
+      console.log("Transaction sent:", tx.hash);
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed in block:", receipt.blockNumber);
+      
+      setLoading(false);
+      return ipfsHash;
     } catch (error) {
-      console.error(error)
-      setError("Error adding record")
-      setLoading(false)
-      throw error
+      setLoading(false);
+      console.error("Error in addRecord function:", error);
+      
+      // More detailed error logging
+      if (error.code) {
+        console.error("Error code:", error.code);
+      }
+      
+      if (error.message) {
+        console.error("Error message:", error.message);
+      }
+      
+      if (error.data) {
+        console.error("Error data:", error.data);
+      }
+      
+      setError(`Failed to add record: ${error.message || "Unknown error"}`);
+      throw error;
     }
-  }
+  };
 
   // Upload to IPFS via Pinata
   const uploadToPinata = async (data) => {
