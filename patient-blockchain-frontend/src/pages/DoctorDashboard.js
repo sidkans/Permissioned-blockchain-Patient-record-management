@@ -1,4 +1,4 @@
-import React, { useState, useContext, useCallback } from 'react';
+import React, { useState, useContext, useCallback, useEffect } from 'react';
 import { BlockchainContext } from '../context/BlockchainContext'; // Adjust path if needed
 import RecordCard from '../components/RecordCard'; // Adjust path if needed
 import Loading from '../components/Loading'; // Adjust path if needed
@@ -12,6 +12,7 @@ function DoctorDashboard() {
         checkAccess, // Function to check if doctor has access to a patient
         loading,
         error,
+        contract,
     } = useContext(BlockchainContext);
 
     const [searchAddress, setSearchAddress] = useState('');
@@ -51,6 +52,48 @@ function DoctorDashboard() {
             setSearchLoading(false);
         }
     }, [searchAddress, currentAccount, checkAccess, viewRecords]); // Added dependencies
+
+    useEffect(() => {
+        const fetchRecords = async () => {
+            try {
+                const address = searchAddress || currentAccount;
+                console.log(`Fetching records for: ${address}`);
+                
+                // Call the viewRecords function from context
+                const records = await viewRecords(address);
+                console.log("Records received in component:", records);
+                
+                setPatientRecords(records);
+            } catch (error) {
+                console.error("Error fetching records:", error);
+            }
+        };
+        
+        if (contract && (currentAccount || searchAddress)) {
+            fetchRecords();
+        }
+    }, [contract, currentAccount, searchAddress, viewRecords]);
+
+    const renderRecords = () => {
+        console.log("Records to render:", patientRecords);
+
+        if (searchLoading) {
+            return <p>Loading records...</p>;
+        }
+
+        if (!patientRecords || patientRecords.length === 0) {
+            return <p>No records found.</p>;
+        }
+
+        return (
+            <div className="records-container">
+                {patientRecords.map((record, index) => {
+                    console.log(`Rendering record ${index}:`, record);
+                    return <RecordCard key={index} record={record} />;
+                })}
+            </div>
+        );
+    };
 
     // Conditional Rendering based on Role and Connection
     if (!currentAccount) {
@@ -98,22 +141,12 @@ function DoctorDashboard() {
             </div>
 
              {/* Section to Display Searched Records */}
-             {!accessDenied && patientRecords.length > 0 && (
+             {!accessDenied && (
                  <div className="dashboard-section">
                     <h3>Records for {searchAddress}</h3>
-                    <div className="records-grid">
-                        {patientRecords.map((record, index) => (
-                            <RecordCard key={index} ipfsHash={record.ipfsHash} timestamp={record.timestamp} />
-                        ))}
-                    </div>
+                    {renderRecords()}
                 </div>
              )}
-              {!accessDenied && !searchLoading && patientRecords.length === 0 && searchAddress && !searchError && (
-                 <div className="dashboard-section">
-                    <p>No records found for {searchAddress}.</p>
-                 </div>
-                )}
-
         </div>
     );
 }

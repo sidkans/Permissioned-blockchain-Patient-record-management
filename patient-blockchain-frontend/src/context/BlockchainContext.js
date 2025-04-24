@@ -753,18 +753,52 @@ export const BlockchainProvider = ({ children }) => {
   // View patient records
   const viewRecords = async (patientAddress) => {
     try {
-      setLoading(true)
-      const records = await contract.viewRecords(patientAddress || currentAccount)
-      setRecords(records)
-      setLoading(false)
-      return records
+      setLoading(true);
+      console.log(`Attempting to view records for address: ${patientAddress || currentAccount}`);
+      
+      // Get records from the contract
+      const rawRecords = await contract.viewRecords(patientAddress || currentAccount);
+      console.log("Raw records received from contract:", rawRecords);
+      console.log("Raw records type:", typeof rawRecords);
+      console.log("Is array?", Array.isArray(rawRecords));
+      console.log("Length:", rawRecords.length);
+      
+      // Handle both array and non-array responses
+      const recordsArray = Array.isArray(rawRecords) ? rawRecords : [rawRecords];
+      
+      // Format records with better error handling
+      const formattedRecords = [];
+      for (let i = 0; i < recordsArray.length; i++) {
+        try {
+          const recordItem = recordsArray[i];
+          console.log(`Record ${i} raw:`, recordItem);
+          
+          // Handle different possible formats
+          const record = {
+            ipfsHash: recordItem.ipfsHash || recordItem[0] || recordItem || '',
+            timestamp: (recordItem.timestamp || recordItem[1] || '0').toString(),
+            recordedBy: recordItem.recordedBy || recordItem[2] || '0x0000000000000000000000000000000000000000'
+          };
+          console.log(`Formatted record ${i}:`, record);
+          formattedRecords.push(record);
+        } catch (err) {
+          console.error(`Error formatting record ${i}:`, err);
+          // Add a fallback record object
+          formattedRecords.push({ ipfsHash: 'Error formatting record', timestamp: '0', recordedBy: '0x0' });
+        }
+      }
+      
+      console.log("Final formatted records:", formattedRecords);
+      setRecords(formattedRecords);
+      setLoading(false);
+      return formattedRecords;
     } catch (error) {
-      console.error(error)
-      setError("Error viewing records")
-      setLoading(false)
-      return []
+      console.error("Error viewing records:", error);
+      setError(`Error viewing records: ${error.message}`);
+      setLoading(false);
+      return [];
     }
-  }
+  };
 
   // Grant access to a doctor
   const grantAccess = async (doctorAddress) => {
@@ -801,11 +835,12 @@ export const BlockchainProvider = ({ children }) => {
   // Check if a doctor has access to a patient's records
   const checkAccess = async (patientAddress, doctorAddress) => {
     try {
-      const hasAccess = await contract.hasAccess(patientAddress || currentAccount, doctorAddress)
-      return hasAccess
+      // Change "hasAccess" to "hasSpecificAccess" to match your contract function name
+      const hasAccess = await contract.hasSpecificAccess(patientAddress, doctorAddress);
+      return hasAccess;
     } catch (error) {
-      console.error(error)
-      return false
+      console.error("Error checking access:", error);
+      return false;
     }
   }
 
